@@ -14,6 +14,7 @@ import Data.Int
 import Data.List.Split (chunksOf)
 import Data.Monoid
 import Data.NBT
+import qualified Data.Text as T
 import Data.Tuple
 import Data.Typeable
 import qualified Data.ByteString.Lazy as B
@@ -131,10 +132,12 @@ moveToTag :: String -> Zipper NBT -> Maybe (Zipper NBT)
 moveToTag name z = do
   z2 <- down' z
   -- This condition fails when no name available, Nothing name, or non-matching name
-  if getHole z2 == Just (Just name)
+  if getHole z2 == Just (T.pack name)
     then Just z
     else do
-      plz <- down z
+      plz <- down =<< down z
+      -- TODO Matching [NBT] here is wrong, it has to be Array and UArray
+      --      But better replace the whole Generic Zipper stuff by sane casing.
       _ <- getHole plz :: Maybe [NBT] -- ensure this cast to [NBT] is valid
       moveToTagList name plz
 
