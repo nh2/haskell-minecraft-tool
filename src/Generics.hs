@@ -11,8 +11,10 @@ import Data.DeriveTH
 import Data.Generics
 import Data.Generics.Zipper
 import Data.Int
+import Data.List.Split (chunksOf)
 import Data.Monoid
 import Data.NBT
+import Data.Tuple
 import Data.Typeable
 import qualified Data.ByteString.Lazy as B
 
@@ -113,14 +115,14 @@ blockDataUpdates updates (NBT "Data" (ByteArrayTag arr)) =
 blockDataUpdates _ nbt = nbt
 
 toCoordArr :: U.UArray Int32 Int8 -> Array CellCoords BlockDatum
-toCoordArr a = fmap fromIntegral $ ixmap (both toCellCoord $ U.bounds a) fromCellCoord (fromUArray a)
+toCoordArr a = fmap fromIntegral $ ixmap (both toCellCoord $ U.bounds a) fromCellCoord (fromUArrayToNybbles a)
 
 fromCoordArr :: Array CellCoords BlockDatum -> U.UArray Int32 Int8
-fromCoordArr a = U.amap fromIntegral . toUArray $ ixmap (both fromCellCoord $ bounds a) toCellCoord a
+fromCoordArr a = U.amap fromIntegral . toUArrayFromNybbles $ ixmap (both fromCellCoord $ bounds a) toCellCoord a
 both f (a,b) = (f a, f b)
 
-fromUArray a = listArray (U.bounds a) (U.elems a)
-toUArray a = U.listArray (bounds a) (elems a)
+fromUArrayToNybbles a = listArray (0, snd (U.bounds a) * 2) (concatMap (tupleToList.swap.toNybbles.fromIntegral) $ U.elems a)
+toUArrayFromNybbles a = U.listArray (0, snd (U.bounds a) `div` 2) (map (fromNybbles . (\[a,b] -> (a,b))) . chunksOf 2 $ elems a)
 
 -- If the hole matches then return the z.
 -- 'plz' means 'possibleListOfZippers'. This is a [NBT] arising from the last

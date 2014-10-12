@@ -57,7 +57,7 @@ Test-Suite test-haskell-minecraft
                      QuickCheck, filepath, test-framework-hunit,
                      test-framework-th,
                      HUnit, syb, syz, Cabal,
-                     text
+                     text, split
 
 Library
      Hs-source-dirs: src
@@ -67,7 +67,7 @@ Library
                      derive>=2.5.4, colour, array,
                      utility-ht, data-ordlist, binary-strict,
                      syz, syb, filepath, list-extras,
-                     text
+                     text, split
      Exposed-modules:
                      Block, Chunk, Colour, Compression, Coords,
                      Devil, FileIO, Generics,
