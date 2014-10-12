@@ -15,6 +15,7 @@ import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.UTF8 as UTF8 ( fromString, toString )
 import Data.Array hiding (indices)
 import Data.Binary
+import Data.Int (Int32)
 import Data.List
 import Data.Maybe
 import Data.NBT
@@ -48,12 +49,22 @@ data BlockData = BlockData (Array CellCoords BlockDatum)
 -- instance Show BlockData where
 --   show (BlockData bd) = "BlockData: ["++show (bounds bd)++"]"
 
+toCellCoord :: Int32 -> CellCoords
+toCellCoord i32 = (x, z, y)
+  where
+    i = fromIntegral i32
+    (r, y) = i `quotRem` chunkSizeY
+    (x, z) = r `quotRem` chunkSizeZ
+
+fromCellCoord :: CellCoords -> Int32
+fromCellCoord (x, z, y) = fromIntegral $ (x * chunkSizeZ + z) * chunkSizeY + y
+
 
 indices = [(x,z,y) | x <- [0..chunkSizeX-1],
                      z <- [0..chunkSizeZ-1],
                      y <- [0..chunkSizeY-1]]
 
--- We will just use BlockId as a type synonym right now. 
+-- We will just use BlockId as a type synonym right now.
 -- I would imagine it's very similar for the data array as well. Maybe we can
 -- abstract out something here.
 instance Binary BlockIds where
@@ -76,7 +87,7 @@ instance Binary BlockData where
       arrMin = (0,0,0)
       arrMax = (chunkSizeX-1,chunkSizeZ-1,chunkSizeY-1)
       swap (a,b) = (b,a)
- 
+
   -- bds is an array of nybbles)...
   put (BlockData bds) = mapM_ (putWord8.fromNybbles) $ zip msn lsn
     where

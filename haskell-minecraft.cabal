@@ -13,7 +13,7 @@ Version:             0.1
 Synopsis:            Import BMP images into Minecraft saved files.
 
 -- A longer description of the package.
--- Description:         
+-- Description:
 
 -- The license under which the package is released.
 License:             MIT
@@ -29,7 +29,7 @@ Author:              Hok Shun Poon
 Maintainer:          fushunpoon@googlemail.com
 
 -- A copyright notice.
--- Copyright:           
+-- Copyright:
 
 Category:            Game
 
@@ -37,7 +37,7 @@ Build-type:          Simple
 
 -- Extra files to be distributed with the package, such as examples or
 -- a README.
--- Extra-source-files:  
+-- Extra-source-files:
 
 -- Constraint on the version of Cabal needed to build this package.
 Cabal-version:       >=1.9.2
@@ -47,7 +47,7 @@ Test-Suite test-haskell-minecraft
      Hs-Source-Dirs: src,test
 --     Test-Module:    Test.HaskellMinecraft
      Main-is:        TestMain.hs
-     Build-Depends:  base, nbt==0.2, utf8-string, binary,
+     Build-Depends:  base, nbt >= 0.5, utf8-string, binary, cereal,
                      bytestring, zlib, directory,
                      pretty-show, lazysmallcheck, OddWord,
                      derive>=2.5.4, colour, array,
@@ -56,17 +56,19 @@ Test-Suite test-haskell-minecraft
                      test-framework, test-framework-quickcheck2,
                      QuickCheck, filepath, test-framework-hunit,
                      test-framework-th,
-                     HUnit, syb, syz, Cabal
+                     HUnit, syb, syz, Cabal,
+                     text
 
 Library
      Hs-source-dirs: src
-     Build-depends:  base, nbt==0.2, utf8-string, binary,
+     Build-depends:  base, nbt >= 0.5, utf8-string, binary, cereal,
                      bytestring, zlib, directory,
                      pretty-show, split, Codec-Image-DevIL,
                      derive>=2.5.4, colour, array,
                      utility-ht, data-ordlist, binary-strict,
-                     syz, syb, filepath, list-extras
-     Exposed-modules: 
+                     syz, syb, filepath, list-extras,
+                     text
+     Exposed-modules:
                      Block, Chunk, Colour, Compression, Coords,
                      Devil, FileIO, Generics,
                      Level, NBTExtras, Region, Timestamp, Types,
@@ -94,8 +96,8 @@ Executable minecraft-png-import
      Build-depends:  base, binary, bytestring, directory, array, haskell-minecraft
 
 
-  -- Other-modules:       
-  
+  -- Other-modules:
+
   -- Extra tools (e.g. alex, hsc2hs, ...) needed to build the source.
-  -- Build-tools:         
-  
+  -- Build-tools:
+

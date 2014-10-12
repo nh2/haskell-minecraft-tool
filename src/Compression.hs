@@ -33,7 +33,7 @@ instance BinaryFunctor Compressed where
 
 instance Binary CompressionFormat where
   get = getWord8 >>= \n -> return $ g n
-    where 
+    where
       g 1 = GZip
       g 2 = Zlib
       g x = error $ "get CompressionFormat: unsupported compression number: " ++ show x

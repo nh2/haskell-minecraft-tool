@@ -90,7 +90,7 @@ instance Binary RegionFileHeader where
       forM_ tss putWord32be
 
   -- getting a (loc::Word24,sectorCount::Word8) require some bit-shifting work.
-  get = 
+  get =
     let getLocationEntry :: Get (Word32,Word8)
         getLocationEntry = getWord32be >>= \x -> do
           return (x `shiftR` 8, fromIntegral $ x `mod` (2^8))
@@ -98,9 +98,9 @@ instance Binary RegionFileHeader where
     in do
       (locs,scs) <- liftM unzip $ replicateM numChunksInRegion getLocationEntry
       tss <- replicateM numChunksInRegion getTimestamp
-      return $ RegionFileHeader locs scs tss 
+      return $ RegionFileHeader locs scs tss
 
-  
+
 {- SERIALIZATION FUNCTIONS -}
 
 -- | Returns an action in the Put monad that serializes a Region into a byte
@@ -114,10 +114,10 @@ putRegion (Region region) = do
   let scs = sectorCountOf <$> compressedChunks :: [Word8]
 
   -- FIXME Timestamp is a bit of a cross-cutting concern. It is stored outside of
-  -- the chunk and yet we would like to recover it. Consider processing pairs of 
+  -- the chunk and yet we would like to recover it. Consider processing pairs of
   --   ((Compressed Chunk), Timestamp)
   -- in the future.
-  let tss = timestampOf <$> compressedChunks :: [Timestamp] 
+  let tss = timestampOf <$> compressedChunks :: [Timestamp]
 
   -- 3) Scan over the list to give a tentative list of locations, making sure that we
   -- zero out the locations that represent null chunks (chunks with length zero)
@@ -145,7 +145,7 @@ putRegion (Region region) = do
     sectorCountOf (Nothing) = 0
     sectorCountOf (Just (CompressedWith _ bs)) =
       fromIntegral $ B.length bs `divPlus1` (4*kB)
-      
+
     -- Put the chunk meta (field size and compression type)
     -- Put compressed data, padding the block up with zeroes.
     -- -5 accounts for the bytes used for the header.
@@ -157,14 +157,14 @@ putRegion (Region region) = do
       let padding = B.replicate (sectorLength - compressedDataSize - 5) 0
       putWord32be $ fromIntegral compressedDataSize
       put fmt
-      mapM_ putLazyByteString [bs,padding] 
+      mapM_ putLazyByteString [bs,padding]
 
 -- | @roundToNearest a b @rounds @a@ to the nearest @b@
 roundToNearest :: (Integral a) => a ->  a -> a
 roundToNearest x n = n * divPlus1 x n
 
 -- | @divPlus1 a b@ essentially finds out the number of @b@s required to fit
--- one @a@ in. 
+-- one @a@ in.
 divPlus1 :: (Integral a) => a -> a -> a
 divPlus1 x n = ((x-1) `div` n) + 1
 
@@ -175,7 +175,7 @@ divPlus1 x n = ((x-1) `div` n) + 1
 -- have chunk datas.
 getRegion :: Get Region
 getRegion = do
-  -- Read the file header and associate indices with the read data, partitioning 
+  -- Read the file header and associate indices with the read data, partitioning
   -- chunks that exist (nonNullLocs) on file from those that have not been
   -- generated yet by Minecraft (nullLocs)
   RegionFileHeader locations _ timestamps  <- get

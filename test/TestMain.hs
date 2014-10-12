@@ -1,8 +1,9 @@
-{-# LANGUAGE FlexibleInstances, TemplateHaskell #-}
+{-# LANGUAGE FlexibleInstances, TemplateHaskell, OverloadedStrings #-}
 module Main where
 
 import Control.Monad
 import Data.Array
+import qualified Data.Array.Unboxed as U
 import Data.Binary
 import Data.Generics.Zipper
 import Data.Int
@@ -42,26 +43,26 @@ main = $(defaultMainGenerator)
 
 -- Test Data
 -- ============================================================================
-nbt1 = CompoundTag (Just "Level")
-  [DoubleTag (Just "Zero") 0.0
-  ,ByteArrayTag (Just "Blocks") 2 (2 `B.cons` (1 `B.cons` B.empty))
-  ,IntTag (Just "One") 1
-  ,ByteArrayTag (Just "Data") 1 (1 `B.cons` B.empty)
+nbt1 = NBT "Level" $ CompoundTag
+  [NBT "Zero" $ DoubleTag 0.0
+  ,NBT "Blocks" $ ByteArrayTag (U.listArray (0,1) [2,1])
+  ,NBT "One" $ IntTag 1
+  ,NBT "Data" $ ByteArrayTag (U.listArray (0,0) [1])
   ]
 
 -- A simple NBT representing a 16x16x128 block of pure gold.
 -- The data field is notably 0.
-nbt2 :: NBT 
-nbt2 = CompoundTag (Just "Level") [
+nbt2 :: NBT
+nbt2 = NBT "Level" $ CompoundTag [
   chunkOfPureGold,
   dataPureZero
   ]
 
 chunkOfPure :: Word8 -> NBT
-chunkOfPure bid = 
+chunkOfPure bid =
   let size = fromIntegral numCellsInChunk
-      bs = B.pack (replicate numCellsInChunk bid) in
-  ByteArrayTag (Just "Blocks") size bs
+      arr = U.listArray (0,size-1) (map fromIntegral $ replicate numCellsInChunk bid) in
+  NBT "Blocks" $ ByteArrayTag arr
 
 -- Interesting; even though I've set all the blocks to pure gold, 9 appears.
 chunkOfPureGold :: NBT
@@ -73,10 +74,10 @@ chunkOfPureWhiteWool = let wool = 35 in chunkOfPure wool
 -- This represents white wool, or the default data value for any block.
 -- Create from numCellsInChunk nybbles of 0.
 -- Encoding puts it back into a bytestring.
-dataPureZero = let zeros = B.pack $ replicate size 0
+dataPureZero = let zeros = U.listArray (0,size'-1) $ replicate size 0
                    size  = numCellsInChunk `div` 2
                    size' = fromIntegral size :: Int32 in
-  ByteArrayTag (Just "Data") size' zeros
+  NBT "Data" $ ByteArrayTag zeros
 
 -- HUnit test cases
 -- ============================================================================
@@ -84,7 +85,7 @@ case_MoveToBlockIdWorks =
   Just chunkOfPureGold @=? getHole (fromJust $ moveToTag "Blocks" (toZipper nbt2))
 case_MoveToDataTagWorks =
   Just dataPureZero @=? getHole (fromJust $ moveToTag "Data" (toZipper nbt2))
- 
+
 -- Put a white wool block in the gold block.
 -- This only requires manipulation of the block data array.
 case_UpdateChunkUpdatesBlockIds =
@@ -137,7 +138,7 @@ case_OneBlockPlacesCorrectlyColouredWoolInWorld = do
 -- QuickCheck2 test properties
 -- ============================================================================
 -- TODO   There must be a way to set the number of times a property is checked.
-prop_DecodeEncodeRegion r = 
+prop_DecodeEncodeRegion r =
   let r' = (decode.encode) r in printTestCase (regionDifferences 10 r r') (r==r')
 
 prop_DecodeEncodeBlockIds :: BlockIds -> Property
@@ -163,7 +164,7 @@ prop_ToFromNybbles byte = (fromNybbles.toNybbles) byte == byte
 atMin a b
   | bounds a == bounds b = let (i,_) = bounds a in ((i,a!i), (i,b!i))
   | otherwise = error "The arrays' dimensions do not agree"
-    
+
 -- Finds the first n different elements between two arrays.
 diff n a b = take n $ filter (\(a,b) -> snd a /= snd b) $ zip (assocs a) (assocs b)
 
@@ -224,8 +225,8 @@ assertBlock dir cell block = do
       let expected = blockDatum block
       let actual = bd ! l
       assertEqual "BlockDatas disagree: " expected actual
-  
-  
+
+
 -- TODO This is a complete copy of the OneWoolBlock program.
 -- Factor this out into its own function so that it can be invoked.
 putOneBlock :: WorldDirectory -> Block -> IO CellCoords
@@ -238,7 +239,7 @@ putOneBlock dir block = do
   performWorldUpdate dir changes
   return woolCoord
 
-fiveBlocksAbove :: CellCoords -> CellCoords 
+fiveBlocksAbove :: CellCoords -> CellCoords
 fiveBlocksAbove (x,z,y) = (x,z,y+5)
 
 getBlockIds :: NBT -> B.ByteString
@@ -294,7 +295,7 @@ instance Arbitrary BlockData where
     where
       arrMin = (0,0,0)
       arrMax = (chunkSizeX-1, chunkSizeZ-1, chunkSizeY-1)
-    
+
 instance Arbitrary B.ByteString where
   arbitrary     = elements [B.cons 100 $ B.cons 200 B.empty, B.cons 100 B.empty]
 -- instance Arbitrary B.ByteString where

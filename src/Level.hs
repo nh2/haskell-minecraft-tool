@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Level where
 
 {---------}
@@ -20,6 +22,7 @@ import Data.NBT
 import Data.Generics
 import Data.Generics.Zipper
 import qualified Data.ByteString.Lazy as B
+import qualified Data.Serialize as Serialize
 
 import NBTExtras
 import Types
@@ -42,8 +45,12 @@ instance Binary Level where
     bs <- getRemainingLazyByteString
     return . Level $ runGet (get::Get NBT) (GZip.decompress bs)
   put (Level nbt) = do
-    putLazyByteString $ GZip.compress $ runPut (put nbt) 
-    
+    putLazyByteString $ GZip.compress $ runPut (put nbt)
+
+instance Binary NBT where
+  put = putLazyByteString . Serialize.encodeLazy
+  get = either (error . ("Could not decode NBT: " ++)) id . Serialize.decodeLazy <$> getRemainingLazyByteString
+
 -----------------------------------------------------------------------
 -- This is the future Level data structure.
 -----------------------------------------------------------------------
@@ -85,19 +92,19 @@ instance Binary Level where
 -- TODO Differentiate between level.dat NBT versions and pick the apporpriate
 -- implementation to extract the player's position correctly.
 
--- OLD VERSION of getting the player coords. 
+-- OLD VERSION of getting the player coords.
 getPlayerCoords' :: NBT -> PlayerCoords
-getPlayerCoords' (CompoundTag (Just "" ) tags) =
-  let [(CompoundTag (Just "Data") dtags)] = tags in
+getPlayerCoords' (NBT "" (CompoundTag tags)) =
+  let [NBT "Data" (CompoundTag dtags)] = tags in
   case findPlayerTag dtags of
     Nothing -> error "Player tag not found."
     Just ptag -> let ptagContents = compoundContents ptag in
-      let [x,y,z] = map getInt $ filter (isPrefixOf "Spawn" . fromJust . getName)
-                      $ filter (isJust . getName) ptagContents
+      let [x,y,z] = map getInt $ filter (isPrefixOf "Spawn" . getName)
+                      $ ptagContents
       in PlayerCoords (x,y,z)
   where
     findPlayerTag = find isPlayerTag
-    isPlayerTag (CompoundTag (Just "Player") _) = True
+    isPlayerTag (NBT "Player" (CompoundTag _)) = True
     isPlayerTag _ = False
 getPlayerCoords' _ = error "Invalid level.dat NBT: does not begin with Data CompoundTag"
 

@@ -30,7 +30,7 @@ type BlockId = Byte
 -- data Block = Air | Wood WoodType | SugarCane GrowthLevel |  Wool WoolColour ...
 -- Where each of WoodType, WoolColour, GrowthLevel
 -- have generic functions that map each of their levels onto an integer.
--- Hopefully, then it would be possible write a generic function 
+-- Hopefully, then it would be possible write a generic function
 -- Block -> (Byte, Nybble) that transforms a block into its binary
 -- representation.
 type BlockDatum = Nybble -- Wraps a Word4
@@ -102,7 +102,7 @@ toDataValue Black      = 15
 instance Binary WoolColour where
   get = do
     w <- get :: Get Word16
-    return $ case w of 
+    return $ case w of
       0  -> White
       1	 -> Orange
       2	 -> Magenta
@@ -113,12 +113,12 @@ instance Binary WoolColour where
       7	 -> Gray
       8	 -> LightGray
       9	 -> Cyan
-      10 -> Purple    	
-      11 -> Blue      	
-      12 -> Brown     	
-      13 -> Green     	
-      14 -> Red       	
-      15 -> Black     	
+      10 -> Purple
+      11 -> Blue
+      12 -> Brown
+      13 -> Green
+      14 -> Red
+      15 -> Black
       x  -> error $ "Unknown wool colour: " ++ show x
 
   put White     = put (0 :: Word16)

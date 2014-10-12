@@ -56,7 +56,7 @@ import Data.Tuple.HT
 class (Binary a) => FileBacked a where
   data PathParam a
   getPath :: WorldDirectory -> PathParam a -> FilePath
-  
+
   -- Edit copies the original file to a backup file. The backup file is read,
   -- and the new modified version of the file is created.
   editFile :: FilePath -> (a -> a) -> IO ()
@@ -112,7 +112,7 @@ convertChunkUpdates chunkUp@(((r,c),_):_) =
 -- Some Funcky lifting is happening here: use bfmap.fmap to lift a function f of
 -- type f :: Chunk -> Chunk
 -- to
--- Compressed Chunk -> Compressed Chunk 
+-- Compressed Chunk -> Compressed Chunk
 -- to
 -- f' :: Maybe (Compressed Chunk) -> Maybe (Compressed Chunk)
 -- FIXME I need to sort this region update code out.
@@ -125,7 +125,7 @@ buildRegionUpdate chunkCoordsAndUpdates (Region region) =
     arrayUpdates = zip chunkCoords newChunks
     newChunks = zipApply maybeCompressedChunkUpdates $ (region !) <$> chunkCoords
     zipApply = zipWith ($)
-    
+
 
 -- buildRegionUpdate [] = id
 -- buildRegionUpdate ((cc,f):us) = buildRegionUpdate us . modifyRegion cc (liftCc f)
@@ -152,7 +152,7 @@ validateMinecraftDirectoryStructure dir = do
 -- TODO Iron out the interface for accessing regions and region files
 -- The IO should be handled by World, as it knows about the entire structure
 -- of the saved file.
--- Wrap a transformation into the region. 
+-- Wrap a transformation into the region.
 -- withRegion :: WorldDirectory -> RegionCoords -> (Region -> Region) -> IO ()
 -- withRegion directory coords trans = do
 --   region <- loadRegion directory coords
